@@ -1,0 +1,69 @@
+### 1. Criar um Produto
+POST http://localhost:8080/api/produtos
+Content-Type: application/json
+
+{
+    "nome": "Smartphone X",
+    "descricao": "Smartphone Android de última geração",
+    "quantidadeEstoque": 50,
+    "precoCusto": 1500.00,
+    "precoVenda": 2500.00
+}
+
+### 2. Criar outro Produto
+POST http://localhost:8080/api/produtos
+Content-Type: application/json
+
+{
+    "nome": "Fone Bluetooth",
+    "descricao": "Fone de ouvido sem fio com cancelamento de ruído",
+    "quantidadeEstoque": 120,
+    "precoCusto": 80.00,
+    "precoVenda": 150.00
+}
+
+### 3. Listar Todos os Produtos
+GET http://localhost:8080/api/produtos
+Content-Type: application/json
+
+### 4. Criar um Cliente
+POST http://localhost:8080/api/clientes
+Content-Type: application/json
+
+{
+    "nome": "Carlos Pereira",
+    "documento": "11223344556",
+    "email": "carlos@example.com",
+    "telefone": "84999887766"
+}
+
+### 5. Listar Todos os Clientes
+GET http://localhost:8080/api/clientes
+Content-Type: application/json
+
+### 6. Registrar uma Venda (usando IDs que você obteve nos passos 1 e 4)
+# Lembre-se de substituir o clienteId e os produtoId pelos IDs reais que foram gerados!
+POST http://localhost:8080/api/vendas
+Content-Type: application/json
+
+{
+    "clienteId": 1, 
+    "itens": [
+        {
+            "produtoId": 1,
+            "quantidade": 1
+        },
+        {
+            "produtoId": 2,
+            "quantidade": 2
+        }
+    ]
+}
+
+### 7. Listar Todas as Vendas
+GET http://localhost:8080/api/vendas
+Content-Type: application/json
+
+### 8. Verificar Estoque Após Venda (para o produto com ID 1)
+GET http://localhost:8080/api/produtos/1
+Content-Type: application/json
