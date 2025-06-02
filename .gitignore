@@ -1,0 +1,47 @@
+# Compiled class files
+*.class
+
+# Log files
+*.log
+logs/
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+# Maven generated files
+/target/
+
+# Gradle generated files
+.gradle/
+build/
+
+# IDE files
+.idea/                  # IntelliJ IDEA
+.vscode/                # VS Code (alguns arquivos de configuração internos)
+*.iml                   # IntelliJ IDEA module files
+*.ipr                   # IntelliJ IDEA project files
+*.iws                   # IntelliJ IDEA workspace files
+
+# Eclipse
+.project
+.classpath
+.settings/
+.factorypath
+
+# OS generated files
+.DS_Store               # macOS
+Thumbs.db               # Windows
+Desktop.ini             # Windows
+
+# Specific to Spring Boot
+/src/main/resources/application*.yml # Evita comitar segredos em production/sensitive profiles
+/src/main/resources/application*.properties
+!/src/main/resources/application.properties # Se você quer que o application.properties default seja versionado
+!/src/main/resources/application.yml # Se você quer que o application.yml default seja versionado
+
+# H2 Database files (if using file mode)
+*.mv.db
+*.trace.db
+/data/                  # Se você salvou o H2 dentro de uma pasta 'data'
