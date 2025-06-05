@@ -1,8 +1,9 @@
 package com.example.estoque_vendas.service;
 
-
 import com.example.estoque_vendas.model.Cliente;
 import com.example.estoque_vendas.repository.ClienteRepository;
+import com.example.estoque_vendas.exception.ResourceNotFoundException; // Importar
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,7 +13,7 @@ import java.util.Optional;
 @Service
 public class ClienteService {
 
-    @Autowired // Injeção de dependência do ClienteRepository
+    @Autowired
     private ClienteRepository clienteRepository;
 
     public List<Cliente> findAll() {
@@ -24,10 +25,6 @@ public class ClienteService {
     }
 
     public Cliente save(Cliente cliente) {
-        // Exemplo de validação de negócio:
-        // if (clienteRepository.findByDocumento(cliente.getDocumento()).isPresent()) {
-        //     throw new RuntimeException("Já existe um cliente com este documento!");
-        // }
         return clienteRepository.save(cliente);
     }
 
@@ -41,10 +38,14 @@ public class ClienteService {
                     // Atualize outros campos conforme necessário
                     return clienteRepository.save(clienteExistente);
                 })
-                .orElseThrow(() -> new RuntimeException("Cliente não encontrado com ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com ID: " + id)); // Usando ResourceNotFoundException
     }
 
     public void deleteById(Long id) {
+        //adicionando verificação se o cliente existe antes de deletar
+        if (!clienteRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Cliente não encontrado com ID: " + id);
+        }
         clienteRepository.deleteById(id);
     }
 }

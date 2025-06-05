@@ -7,13 +7,15 @@ import com.example.estoque_vendas.model.Venda;
 import com.example.estoque_vendas.repository.ClienteRepository;
 import com.example.estoque_vendas.repository.ProdutoRepository;
 import com.example.estoque_vendas.repository.VendaRepository;
-import com.example.estoque_vendas.dto.ItemVendaRequest; // Importe o DTO de ItemVenda
+import com.example.estoque_vendas.dto.ItemVendaRequest;
+import com.example.estoque_vendas.exception.BadRequestException;
+import com.example.estoque_vendas.exception.ResourceNotFoundException; // Certifique-se de importar suas novas exceções
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal; // <--- Adicione esta importação para BigDecimal
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -39,11 +41,10 @@ public class VendaService {
     }
 
     @Transactional
-    // O método agora recebe List<ItemVendaRequest> (o DTO)
     public Venda registrarVenda(Long clienteId, List<ItemVendaRequest> itensVendaRequest) {
         // 1. Buscar o cliente
         Cliente cliente = clienteRepository.findById(clienteId)
-                .orElseThrow(() -> new RuntimeException("Cliente não encontrado com ID: " + clienteId));
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com ID: " + clienteId));
 
         Venda novaVenda = new Venda();
         novaVenda.setCliente(cliente);
@@ -51,12 +52,16 @@ public class VendaService {
         novaVenda.setValorTotal(BigDecimal.ZERO); // Inicializa com zero
 
         // 2. Processar cada item de venda (DTO) e converter para entidade ItemVenda
-        for (ItemVendaRequest itemRequest : itensVendaRequest) { // Itera sobre os DTOs de item
-            Produto produto = produtoRepository.findById(itemRequest.getProdutoId()) // Usa getProdutoId() do DTO
-                    .orElseThrow(() -> new RuntimeException("Produto não encontrado com ID: " + itemRequest.getProdutoId()));
+        for (ItemVendaRequest itemRequest : itensVendaRequest) {
+            Produto produto = produtoRepository.findById(itemRequest.getProdutoId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado com ID: " + itemRequest.getProdutoId()));
 
-            if (produto.getQuantidadeEstoque() < itemRequest.getQuantidade()) { // Usa getQuantidade() do DTO
-                throw new RuntimeException("Estoque insuficiente para o produto: " + produto.getNome());
+            if (itemRequest.getQuantidade() <= 0) { // Adiciona validação para quantidade
+                throw new BadRequestException("A quantidade do produto " + produto.getNome() + " deve ser maior que zero.");
+            }
+
+            if (produto.getQuantidadeEstoque() < itemRequest.getQuantidade()) {
+                throw new BadRequestException("Estoque insuficiente para o produto: " + produto.getNome() + ". Disponível: " + produto.getQuantidadeEstoque() + ", Solicitado: " + itemRequest.getQuantidade());
             }
 
             // Diminuir o estoque do produto

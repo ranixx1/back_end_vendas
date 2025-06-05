@@ -1,6 +1,5 @@
 package com.example.estoque_vendas.controller;
 
-
 import com.example.estoque_vendas.model.Produto;
 import com.example.estoque_vendas.service.ProdutoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,45 +9,41 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RestController // Indica que esta classe é um controlador REST
-@RequestMapping("/api/produtos") // Define o caminho base para todos os endpoints neste controlador
+@RestController
+@RequestMapping("/api/produtos")
 public class ProdutoController {
 
     @Autowired
     private ProdutoService produtoService;
 
-    @GetMapping // GET /api/produtos - Retorna todos os produtos
+    @GetMapping
     public ResponseEntity<List<Produto>> getAllProdutos() {
         List<Produto> produtos = produtoService.findAll();
-        return ResponseEntity.ok(produtos); // Retorna 200 OK com a lista de produtos
+        return ResponseEntity.ok(produtos);
     }
 
-    @GetMapping("/{id}") // GET /api/produtos/{id} - Retorna um produto por ID
+    @GetMapping("/{id}")
     public ResponseEntity<Produto> getProdutoById(@PathVariable Long id) {
         return produtoService.findById(id)
-                .map(produto -> ResponseEntity.ok(produto)) // Retorna 200 OK com o produto
-                .orElse(ResponseEntity.notFound().build()); // Retorna 404 Not Found se não encontrar
+                .map(produto -> ResponseEntity.ok(produto))
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping // POST /api/produtos - Cria um novo produto
+    @PostMapping
     public ResponseEntity<Produto> createProduto(@RequestBody Produto produto) {
         Produto savedProduto = produtoService.save(produto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedProduto); // Retorna 201 CREATED
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedProduto);
     }
 
-    @PutMapping("/{id}") // PUT /api/produtos/{id} - Atualiza um produto existente
+    @PutMapping("/{id}")
     public ResponseEntity<Produto> updateProduto(@PathVariable Long id, @RequestBody Produto produto) {
-        try {
-            Produto updatedProduto = produtoService.update(id, produto);
-            return ResponseEntity.ok(updatedProduto); // Retorna 200 OK com o produto atualizado
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build(); // Retorna 404 Not Found se não encontrar
-        }
+        Produto updatedProduto = produtoService.update(id, produto);
+        return ResponseEntity.ok(updatedProduto);
     }
 
-    @DeleteMapping("/{id}") // DELETE /api/produtos/{id} - Deleta um produto por ID
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduto(@PathVariable Long id) {
         produtoService.deleteById(id);
-        return ResponseEntity.noContent().build(); // Retorna 204 No Content (sucesso sem conteúdo)
+        return ResponseEntity.noContent().build();
     }
 }

@@ -2,16 +2,18 @@ package com.example.estoque_vendas.service;
 
 import com.example.estoque_vendas.model.Produto;
 import com.example.estoque_vendas.repository.ProdutoRepository;
+import com.example.estoque_vendas.exception.ResourceNotFoundException; // Importar
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
-@Service // Indica que esta classe é um componente de serviço
+@Service
 public class ProdutoService {
 
-    @Autowired // Injeta uma instância de ProdutoRepository automaticamente
+    @Autowired
     private ProdutoRepository produtoRepository;
 
     public List<Produto> findAll() {
@@ -38,10 +40,14 @@ public class ProdutoService {
                     // Atualize outros campos conforme necessário
                     return produtoRepository.save(produtoExistente);
                 })
-                .orElseThrow(() -> new RuntimeException("Produto não encontrado com ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado com ID: " + id)); // Usando ResourceNotFoundException
     }
 
     public void deleteById(Long id) {
+        // Opcional: Adicionar verificação se o produto existe antes de deletar
+        if (!produtoRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Produto não encontrado com ID: " + id);
+        }
         produtoRepository.deleteById(id);
     }
 }
