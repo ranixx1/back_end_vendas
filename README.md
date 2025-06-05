@@ -2,7 +2,7 @@
 
 Este é um projeto de um sistema básico de estoque e vendas desenvolvido com Spring Boot, utilizando uma arquitetura em camadas (Controller, Service, Repository, Model/Entity, DTO) e um banco de dados H2 para persistência.
 
-## Funcionalidades Implementadas
+## Funcionalidades que estou a Implementadas
 
 - **CRUD (Criar, Ler, Atualizar, Deletar) de Produtos:**
   - Cadastro e gestão de itens do estoque.
