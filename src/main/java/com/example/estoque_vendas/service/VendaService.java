@@ -9,7 +9,7 @@ import com.example.estoque_vendas.repository.ProdutoRepository;
 import com.example.estoque_vendas.repository.VendaRepository;
 import com.example.estoque_vendas.dto.ItemVendaRequest;
 import com.example.estoque_vendas.exception.BadRequestException;
-import com.example.estoque_vendas.exception.ResourceNotFoundException; // Certifique-se de importar suas novas exceções
+import com.example.estoque_vendas.exception.ResourceNotFoundException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,8 +20,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class VendaService {
+
+    private static final Logger logger = LoggerFactory.getLogger(VendaService.class);
 
     @Autowired
     private VendaRepository vendaRepository;
@@ -33,57 +38,92 @@ public class VendaService {
     private ProdutoRepository produtoRepository;
 
     public List<Venda> findAll() {
+        logger.info("Buscando todas as vendas.");
         return vendaRepository.findAll();
     }
 
     public Optional<Venda> findById(Long id) {
+        logger.info("Buscando venda com ID: {}", id);
         return vendaRepository.findById(id);
     }
 
     @Transactional
     public Venda registrarVenda(Long clienteId, List<ItemVendaRequest> itensVendaRequest) {
-        // 1. Buscar o cliente
+        logger.info("Iniciando registro de venda para o cliente ID: {} com {} itens.", clienteId, itensVendaRequest.size());
+
         Cliente cliente = clienteRepository.findById(clienteId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com ID: " + clienteId));
+                .orElseThrow(() -> {
+                    logger.error("Cliente não encontrado com ID: {}", clienteId);
+                    return new ResourceNotFoundException("Cliente não encontrado com ID: " + clienteId);
+                });
+        logger.debug("Cliente encontrado: {}", cliente.getNome());
 
         Venda novaVenda = new Venda();
         novaVenda.setCliente(cliente);
         novaVenda.setDataVenda(LocalDateTime.now());
-        novaVenda.setValorTotal(BigDecimal.ZERO); // Inicializa com zero
+        novaVenda.setValorTotal(BigDecimal.ZERO);
 
-        // 2. Processar cada item de venda (DTO) e converter para entidade ItemVenda
         for (ItemVendaRequest itemRequest : itensVendaRequest) {
             Produto produto = produtoRepository.findById(itemRequest.getProdutoId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado com ID: " + itemRequest.getProdutoId()));
+                    .orElseThrow(() -> {
+                        logger.error("Produto não encontrado com ID: {} durante o registro da venda.", itemRequest.getProdutoId());
+                        return new ResourceNotFoundException("Produto não encontrado com ID: " + itemRequest.getProdutoId());
+                    });
+            logger.debug("Processando item: Produto {} (ID: {}), Quantidade: {}", produto.getNome(), produto.getId(), itemRequest.getQuantidade());
 
-            if (itemRequest.getQuantidade() <= 0) { // Adiciona validação para quantidade
+            if (itemRequest.getQuantidade() <= 0) {
+                logger.warn("Tentativa de vender produto {} com quantidade inválida: {}", produto.getNome(), itemRequest.getQuantidade());
                 throw new BadRequestException("A quantidade do produto " + produto.getNome() + " deve ser maior que zero.");
             }
 
             if (produto.getQuantidadeEstoque() < itemRequest.getQuantidade()) {
+                logger.warn("Estoque insuficiente para o produto: {}. Disponível: {}, Solicitado: {}", produto.getNome(), produto.getQuantidadeEstoque(), itemRequest.getQuantidade());
                 throw new BadRequestException("Estoque insuficiente para o produto: " + produto.getNome() + ". Disponível: " + produto.getQuantidadeEstoque() + ", Solicitado: " + itemRequest.getQuantidade());
             }
 
-            // Diminuir o estoque do produto
             produto.setQuantidadeEstoque(produto.getQuantidadeEstoque() - itemRequest.getQuantidade());
-            produtoRepository.save(produto); // Salva a atualização do estoque
+            produtoRepository.save(produto);
+            logger.info("Estoque do produto {} (ID: {}) atualizado para: {}", produto.getNome(), produto.getId(), produto.getQuantidadeEstoque());
 
-            // Criar a entidade ItemVenda a partir do DTO e do Produto
             ItemVenda item = new ItemVenda();
             item.setProduto(produto);
             item.setQuantidade(itemRequest.getQuantidade());
-            item.setPrecoUnitario(produto.getPrecoVenda()); // Usa o preço de venda atual do produto
+            item.setPrecoUnitario(produto.getPrecoVenda());
 
-            novaVenda.adicionarItem(item); // Adiciona o item à lista de itens da venda
+            novaVenda.adicionarItem(item);
         }
 
-        // 3. Calcular o valor total da venda
         novaVenda.calcularValorTotal();
+        logger.info("Valor total da venda calculado: {}", novaVenda.getValorTotal());
 
-        // 4. Salvar a nova venda (que salvará os itensVenda em cascata)
-        return vendaRepository.save(novaVenda);
+        Venda vendaSalva = vendaRepository.save(novaVenda);
+        logger.info("Venda registrada com sucesso! ID da Venda: {}", vendaSalva.getId());
+        return vendaSalva;
     }
 
-    // Métodos de atualização e deleção para vendas podem ser mais complexos
-    // devido à necessidade de reverter estoque, etc. Por enquanto, focaremos na criação.
+    @Transactional
+    public void cancelarVenda(Long vendaId) {
+        logger.info("Iniciando cancelamento da venda com ID: {}", vendaId);
+
+        Venda venda = vendaRepository.findById(vendaId)
+                .orElseThrow(() -> {
+                    logger.error("Venda não encontrada para cancelamento com ID: {}", vendaId);
+                    return new ResourceNotFoundException("Venda não encontrada com ID: " + vendaId);
+                });
+
+        // 1. Devolver os itens da venda para o estoque
+        for (ItemVenda item : venda.getItens()) {
+            Produto produto = item.getProduto();
+            Integer quantidadeDevolvida = item.getQuantidade();
+
+            produto.setQuantidadeEstoque(produto.getQuantidadeEstoque() + quantidadeDevolvida);
+            produtoRepository.save(produto);
+            logger.info("Estoque do produto {} (ID: {}) atualizado para {} após cancelamento da venda {}.",
+                        produto.getNome(), produto.getId(), produto.getQuantidadeEstoque(), vendaId);
+        }
+
+        // 2. Deletar a venda (os itens de venda serão deletados em cascata devido a CascadeType.ALL)
+        vendaRepository.delete(venda);
+        logger.info("Venda com ID: {} cancelada e removida com sucesso.", vendaId);
+    }
 }
