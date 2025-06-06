@@ -69,3 +69,95 @@ Content-Type: application/json
 ### 8. Verificar Estoque Após Venda (para o produto com ID 1)
 GET {{baseUrl}}/produtos/1
 Content-Type: application/json
+
+### 9. Verificar Estoque Após Venda (para o produto com ID 2)
+GET {{baseUrl}}/produtos/2
+Content-Type: application/json
+
+###
+# 10. CANCELAR VENDA
+# DELETE /api/vendas/{id_da_venda}
+DELETE {{baseUrl}}/vendas/1
+Content-Type: application/json
+
+###
+# 11. VERIFICAR ESTOQUE APÓS CANCELAMENTO (para o produto com ID 1)
+# Verifique se a quantidadeEstoque voltou para o valor inicial (Smartphone X: 50)
+GET {{baseUrl}}/produtos/1
+Content-Type: application/json
+
+###
+# 12. VERIFICAR ESTOQUE APÓS CANCELAMENTO (para o produto com ID 2)
+# Verifique se a quantidadeEstoque voltou para o valor inicial (Fone Bluetooth: 120)
+GET {{baseUrl}}/produtos/2
+Content-Type: application/json
+
+###
+# 13. TENTAR BUSCAR VENDA CANCELADA
+# GET /api/vendas/{id_da_venda}
+# Deve retornar 404 Not Found, pois a venda foi deletada.
+GET {{baseUrl}}/vendas/1
+Content-Type: application/json
+
+###
+# 14. TENTAR REGISTRAR VENDA COM ESTOQUE INSUFICIENTE (TESTE DE ERRO BadRequestException)
+# POST /api/vendas
+# Deve retornar 400 Bad Request
+POST {{baseUrl}}/vendas
+Content-Type: application/json
+
+{
+    "clienteId": 1,
+    "itens": [
+        {
+            "produtoId": 1,
+            "quantidade": 50000000000
+        }
+    ]
+}
+
+###
+# 15. TENTAR REGISTRAR VENDA COM CLIENTE INEXISTENTE (TESTE DE ERRO ResourceNotFoundException)
+# POST /api/vendas
+# Deve retornar 404 Not Found
+POST {{baseUrl}}/vendas
+Content-Type: application/json
+
+{
+    "clienteId": 99999,
+    "itens": [
+        {
+            "produtoId": 1,
+            "quantidade": 1
+        }
+    ]
+}
+
+###
+# 16. TENTAR REGISTRAR VENDA SEM ITENS (TESTE DE VALIDAÇÃO @Size)
+# POST /api/vendas
+# Deve retornar 400 Bad Request
+POST {{baseUrl}}/vendas
+Content-Type: application/json
+
+{
+    "clienteId": 1,
+    "itens": []
+}
+
+###
+# 17. TENTAR REGISTRAR VENDA COM QUANTIDADE NEGATIVA/ZERO (TESTE DE VALIDAÇÃO @Min ou BadRequestException)
+# POST /api/vendas
+# Deve retornar 400 Bad Request
+POST {{baseUrl}}/vendas
+Content-Type: application/json
+
+{
+    "clienteId": 1,
+    "itens": [
+        {
+            "produtoId": 1,
+            "quantidade": 0
+        }
+    ]
+}
