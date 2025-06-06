@@ -1,5 +1,7 @@
+@baseUrl = http://localhost:8080/api
+
 ### 1. Criar um Produto
-POST http://localhost:8080/api/produtos
+POST {{baseUrl}}/produtos
 Content-Type: application/json
 
 {
@@ -11,7 +13,7 @@ Content-Type: application/json
 }
 
 ### 2. Criar outro Produto
-POST http://localhost:8080/api/produtos
+POST {{baseUrl}}/produtos
 Content-Type: application/json
 
 {
@@ -23,11 +25,11 @@ Content-Type: application/json
 }
 
 ### 3. Listar Todos os Produtos
-GET http://localhost:8080/api/produtos
+GET {{baseUrl}}/produtos
 Content-Type: application/json
 
 ### 4. Criar um Cliente
-POST http://localhost:8080/api/clientes
+POST {{baseUrl}}/clientes
 Content-Type: application/json
 
 {
@@ -38,12 +40,12 @@ Content-Type: application/json
 }
 
 ### 5. Listar Todos os Clientes
-GET http://localhost:8080/api/clientes
+GET {{baseUrl}}/clientes
 Content-Type: application/json
 
 ### 6. Registrar uma Venda (usando IDs que você obteve nos passos 1 e 4)
 # Lembre-se de substituir o clienteId e os produtoId pelos IDs reais que foram gerados!
-POST http://localhost:8080/api/vendas
+POST {{baseUrl}}//vendas
 Content-Type: application/json
 
 {
@@ -61,9 +63,9 @@ Content-Type: application/json
 }
 
 ### 7. Listar Todas as Vendas
-GET http://localhost:8080/api/vendas
+GET GET {{baseUrl}}//vendas
 Content-Type: application/json
 
 ### 8. Verificar Estoque Após Venda (para o produto com ID 1)
-GET http://localhost:8080/api/produtos/1
+GET {{baseUrl}}/produtos/1
 Content-Type: application/json
