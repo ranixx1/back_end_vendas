@@ -1,0 +1,82 @@
+# Anotações Gerais do Sistema de Estoque e Vendas (Backend)
+
+Este documento descreve a estrutura, os componentes e as funcionalidades do sistema de Estoque e Vendas, que é uma **API RESTful** desenvolvida com Spring Boot. O foco é no backend, sem interface de usuário web ou gráfica.
+
+---
+
+## Estrutura de Pastas e Responsabilidades (Arquitetura em Camadas)
+
+O projeto segue a arquitetura em camadas, o que ajuda na organização, manutenção e escalabilidade do código.
+
+1.  **`src/main/java/com/example/estoque_vendas/model`**:
+    * **Função:** Contém as classes que representam as entidades do banco de dados (também conhecidas como Modelos ou Entidades JPA). Elas definem a estrutura dos dados e como são mapeadas para as tabelas do H2 Database.
+    * **Exemplos:** `Cliente.java`, `Produto.java`, `Venda.java`, `ItemVenda.java`.
+    * **Anotações comuns:** `@Entity`, `@Table`, `@Id`, `@GeneratedValue`, `@Column`, `@ManyToOne`, `@OneToMany`.
+
+2.  **`src/main/java/com/example/estoque_vendas/repository`**:
+    * **Função:** Interfaces responsáveis pela comunicação com o banco de dados. Utilizam Spring Data JPA para fornecer métodos CRUD (Create, Read, Update, Delete) básicos sem a necessidade de escrevê-los manualmente.
+    * **Exemplos:** `ClienteRepository.java`, `ProdutoRepository.java`, `VendaRepository.java`.
+    * **Anotações comuns:** `@Repository` (opcional, mas boa prática), `extends JpaRepository<Entity, IdType>`.
+
+3.  **`src/main/java/com.example/estoque_vendas/service`**:
+    * **Função:** Contém a lógica de negócio principal da aplicação. Orquestra as operações, manipula dados, aplica regras de negócio e interage com os repositórios.
+    * **Exemplos:** `ClienteService.java`, `ProdutoService.java`, `VendaService.java`.
+    * **Anotações comuns:** `@Service`, `@Autowired`, `@Transactional`.
+
+4.  **`src/main/java/com.example/estoque_vendas/dto`**:
+    * **Função:** Contém os Data Transfer Objects (DTOs). São classes simples usadas para transferir dados entre as camadas da aplicação, especialmente entre o cliente da API e o controlador. Servem para modelar o formato das requisições e respostas JSON, e para aplicar validações de entrada.
+    * **Exemplos:** `RegistrarVendaRequest.java` (para registrar uma venda), `ItemVendaRequest.java` (para os itens de venda).
+    * **Anotações comuns:** `@Data` (Lombok), `@NotNull`, `@Size`, `@Min`.
+
+5.  **`src/main/java/com.example/estoque_vendas/controller`**:
+    * **Função:** Recebe as requisições HTTP do cliente, chama os métodos apropriados na camada de serviço e retorna as respostas HTTP. Mapeia as URLs para os métodos da aplicação.
+    * **Exemplos:** `ClienteController.java`, `ProdutoController.java`, `VendaController.java`.
+    * **Anotações comuns:** `@RestController`, `@RequestMapping`, `@GetMapping`, `@PostMapping`, `@PutMapping`, `@DeleteMapping`, `@PathVariable`, `@RequestBody`, `@Valid`.
+
+6.  **`src/main/java/com/example/estoque_vendas/exception`**:
+    * **Função:** Contém as classes de exceção personalizadas para lidar com erros de forma mais específica e clara para o cliente da API. Também pode conter classes para tratamento global de exceções.
+    * **Exemplos:** `ResourceNotFoundException.java` (para recursos não encontrados - HTTP 404), `BadRequestException.java` (para requisições inválidas ou regras de negócio violadas - HTTP 400).
+    * **Novo:** `GlobalExceptionHandler.java` - Uma classe que intercepta exceções lançadas em qualquer lugar da aplicação e as transforma em respostas HTTP formatadas, garantindo consistência no tratamento de erros.
+
+---
+
+## Novas Implementações Recentes e Funcionalidades Aprimoradas
+
+1.  **Exceções Personalizadas:**
+    * **`ResourceNotFoundException`**: Lançada quando um recurso (cliente, produto, venda) não é encontrado no banco de dados. Mapeada para `HTTP 404 Not Found`.
+    * **`BadRequestException`**: Lançada para erros de lógica de negócio, como estoque insuficiente em uma venda, ou quantidade inválida. Mapeada para `HTTP 400 Bad Request`.
+
+2.  **Tratamento Global de Exceções (`GlobalExceptionHandler.java`):**
+    * **Função:** Centraliza a forma como as exceções são tratadas e apresentadas ao cliente da API.
+    * **Novidade:** Intercepta `MethodArgumentNotValidException` (erros do Bean Validation), `ResourceNotFoundException`, `BadRequestException` e outras exceções genéricas, retornando um JSON descritivo com o status HTTP adequado. Isso substitui `try-catch` em cada controller, tornando o código mais limpo.
+
+3.  **Validação de Entrada com Bean Validation:**
+    * **Como funciona:** Anotações como `@NotNull`, `@Size(min = 1, message = "...")` e `@Min(value = 1, message = "...")` foram adicionadas aos DTOs (`RegistrarVendaRequest`, `ItemVendaRequest`).
+    * **Ativação:** A anotação `@Valid` no `@RequestBody` dos métodos do Controller força o Spring a verificar essas regras de validação antes de processar a requisição.
+    * **Benefício:** Garante que os dados de entrada da API atendam aos requisitos mínimos, protegendo a lógica de negócio de dados inválidos.
+
+4.  **Sistema de Logging (`org.slf4j.Logger`):**
+    * **Como funciona:** Instâncias de `Logger` foram adicionadas em todas as classes de `Service` e `Controller`.
+    * **Tipos de logs:** Mensagens são registradas em diferentes níveis (`INFO`, `DEBUG`, `WARN`, `ERROR`) para indicar o fluxo da aplicação, informações importantes, potenciais problemas ou erros graves.
+    * **Benefício:** Essencial para depuração, monitoramento da aplicação em tempo real e análise de problemas em ambientes de produção.
+
+5.  **Funcionalidade de Cancelamento de Venda (`VendaService.cancelarVenda` e `VendaController.deleteVenda`):**
+    * **Como funciona:** O novo método `cancelarVenda(Long id)` foi implementado no `VendaService`. Ele busca a venda pelo ID, itera sobre seus itens, e `devolve a quantidade de cada produto ao estoque` antes de deletar a venda.
+    * **Endpoint:** Um endpoint `DELETE /api/vendas/{id}` foi adicionado ao `VendaController` para acionar essa funcionalidade.
+    * **Benefício:** Permite gerenciar o ciclo de vida completo de uma venda, incluindo estornos, mantendo a consistência do estoque.
+
+---
+
+## Tecnologias Principais Utilizadas
+
+* **Spring Boot:** Framework base para construção da aplicação.
+* **Spring Data JPA:** Para acesso a dados e ORM (Object-Relational Mapping).
+* **H2 Database:** Banco de dados em memória/arquivo, utilizado para desenvolvimento.
+* **Lombok:** Para reduzir código boilerplate em Models e DTOs.
+* **Maven:** Gerenciamento de dependências e build do projeto.
+* **Jakarta Validation (Bean Validation):** Para validação de dados de entrada.
+* **SLF4J/Logback:** Para logging eficiente.
+
+---
+
+**Estado Atual:** O sistema possui um backend funcional para gestão de produtos, clientes e vendas, com tratamento de erros robusto, validação de dados e capacidade de estornar vendas, além de um sistema de logging para observabilidade.
