@@ -5,9 +5,9 @@ import com.example.estoque_vendas.service.ProdutoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/produtos")
@@ -17,9 +17,9 @@ public class ProdutoController {
     private ProdutoService produtoService;
 
     @GetMapping
-    public ResponseEntity<Page<Produto>> getAllProdutos(Pageable pageable) {
-        Page<Produto> produtosPage = produtoService.findAll(pageable);
-        return ResponseEntity.ok(produtosPage);
+    public ResponseEntity<List<Produto>> getAllProdutos() {
+        List<Produto> produtos = produtoService.findAll();
+        return ResponseEntity.ok(produtos);
     }
 
     @GetMapping("/{id}")
